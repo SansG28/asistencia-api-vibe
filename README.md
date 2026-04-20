@@ -1,0 +1,555 @@
+# API REST de Gestión de Asistencia Estudiantil 📚
+
+API REST profesional construida con **Node.js** y **Express** para la gestión integral de asistencia de estudiantes. Diseñada para uso local con almacenamiento en memoria.
+
+---
+
+## 🚀 Características Principales
+
+✅ **Gestión de Estudiantes**: Crear, listar y obtener información de estudiantes  
+✅ **Registro de Asistencia**: Registrar y consultar asistencias con validaciones estrictas  
+✅ **Reportes de Ausentismo**: Generar ranking de Top 5 estudiantes con más ausencias  
+✅ **Validaciones Robustas**: Regex para códigos de estudiante, validación de fechas y estados  
+✅ **Estructura Modular**: Separación clara entre rutas, controladores y modelos  
+✅ **Manejo de Errores**: Respuestas HTTP apropiadas (201, 400, 404, 409, 500)  
+✅ **Ejemplos JSON**: Documentación completa de peticiones y respuestas  
+
+---
+
+## 📋 Requisitos Previos
+
+- **Node.js** v14 o superior
+- **npm** (incluido con Node.js)
+
+---
+
+## 🔧 Instalación
+
+### 1. Clonar o descargar el proyecto
+```bash
+cd asistencia-api-vibe
+```
+
+### 2. Instalar dependencias
+```bash
+npm install
+```
+
+### 3. Iniciar el servidor
+```bash
+# Modo producción
+npm start
+
+# Modo desarrollo (con nodemon para reinicio automático)
+npm run dev
+```
+
+El servidor iniciará en `http://localhost:3000`
+
+---
+
+## 📡 Endpoints de la API
+
+### **ESTUDIANTES**
+
+#### 1. Crear Estudiante
+- **Método**: `POST`
+- **Ruta**: `/api/estudiantes`
+- **Código HTTP**: `201 Created`
+- **Body**:
+```json
+{
+  "id": "EST00003",
+  "nombre": "Pedro Rodríguez",
+  "email": "pedro.rodriguez@example.com"
+}
+```
+- **Respuesta**:
+```json
+{
+  "success": true,
+  "message": "Estudiante creado exitosamente",
+  "data": {
+    "id": "EST00003",
+    "nombre": "Pedro Rodríguez",
+    "email": "pedro.rodriguez@example.com",
+    "createdAt": "2024-04-20T10:30:00.000Z"
+  }
+}
+```
+
+#### 2. Listar Todos los Estudiantes
+- **Método**: `GET`
+- **Ruta**: `/api/estudiantes`
+- **Código HTTP**: `200 OK`
+- **Respuesta**:
+```json
+{
+  "success": true,
+  "message": "Estudiantes obtenidos exitosamente",
+  "data": [
+    {
+      "id": "EST00001",
+      "nombre": "Juan García",
+      "email": "juan.garcia@example.com",
+      "createdAt": "2024-01-15T08:00:00.000Z"
+    }
+  ],
+  "total": 1
+}
+```
+
+#### 3. Obtener Estudiante por ID
+- **Método**: `GET`
+- **Ruta**: `/api/estudiantes/:id`
+- **Código HTTP**: `200 OK` o `404 Not Found`
+- **Ejemplo**: `/api/estudiantes/EST00001`
+
+---
+
+### **ASISTENCIAS**
+
+#### 1. Registrar Asistencia
+- **Método**: `POST`
+- **Ruta**: `/api/asistencias`
+- **Código HTTP**: `201 Created`
+- **Body**:
+```json
+{
+  "id_estudiante": "EST00001",
+  "fecha": "2024-04-20",
+  "estado": "presente"
+}
+```
+- **Estados permitidos**: `presente`, `ausente`, `justificada`
+- **Formato de fecha**: `YYYY-MM-DD` (ISO 8601)
+
+#### 2. Listar Asistencias de un Estudiante
+- **Método**: `GET`
+- **Ruta**: `/api/asistencias/estudiante/:id`
+- **Código HTTP**: `200 OK` o `404 Not Found`
+- **Ejemplo**: `/api/asistencias/estudiante/EST00001`
+- **Respuesta**:
+```json
+{
+  "success": true,
+  "message": "Asistencias obtenidas exitosamente",
+  "data": [
+    {
+      "id": 1,
+      "id_estudiante": "EST00001",
+      "fecha": "2024-04-20",
+      "estado": "presente",
+      "createdAt": "2024-04-20T08:00:00.000Z"
+    }
+  ],
+  "total": 1,
+  "estudiante": {
+    "id": "EST00001",
+    "nombre": "Juan García"
+  }
+}
+```
+
+---
+
+### **REPORTES**
+
+#### Top 5 Estudiantes con Mayor Ausentismo
+- **Método**: `GET`
+- **Ruta**: `/api/reportes/ausentismo`
+- **Código HTTP**: `200 OK`
+- **Respuesta**:
+```json
+{
+  "success": true,
+  "message": "Reporte de ausentismo obtenido exitosamente",
+  "data": [
+    {
+      "ranking": 1,
+      "id": "EST00002",
+      "nombre": "María López",
+      "email": "maria.lopez@example.com",
+      "totalAsistencias": 10,
+      "presentes": 6,
+      "ausencias": 3,
+      "justificadas": 1,
+      "totalFaltas": 4,
+      "porcentajeAusencia": 40
+    }
+  ],
+  "total": 1
+}
+```
+
+**Nota**: El reporte ordena por:
+1. Total de faltas (ausencias + justificadas) - orden descendente
+2. Porcentaje de ausencia - orden descendente
+
+---
+
+## 🛡️ Reglas de Negocio Estrictas
+
+### Código de Estudiante
+- ✅ Debe seguir el patrón: **EST + 5 dígitos** (Ej: EST00123)
+- ✅ Validado con Regex: `/^EST\d{5}$/`
+- ✅ Debe ser único en el sistema
+- ❌ No se permiten duplicados (código 409)
+
+### Estados de Asistencia
+- ✅ **presente** - Asistencia normal
+- ✅ **ausente** - Inasistencia sin justificación
+- ✅ **justificada** - Inasistencia con justificación
+- ❌ Otros valores retornan error 400
+
+### Fechas
+- ✅ Formato: `YYYY-MM-DD` (ISO 8601)
+- ✅ No se pueden registrar fechas futuras
+- ✅ Debe ser una fecha válida
+- ❌ Restricción de unicidad: No se puede registrar dos asistencias para el mismo estudiante en la misma fecha (código 409)
+
+---
+
+## 📊 Códigos de Estado HTTP
+
+| Código | Significado | Caso de Uso |
+|--------|-------------|------------|
+| **200** | OK | Consulta exitosa |
+| **201** | Created | Recurso creado exitosamente |
+| **400** | Bad Request | Validación fallida o datos inválidos |
+| **404** | Not Found | Estudiante o recurso no encontrado |
+| **409** | Conflict | Duplicado o conflicto de datos |
+| **500** | Server Error | Error interno del servidor |
+
+---
+
+## 🧪 Pruebas de la API
+
+### Con cURL
+
+```bash
+# 1. Crear un estudiante
+curl -X POST http://localhost:3000/api/estudiantes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "EST00003",
+    "nombre": "Carlos Pérez",
+    "email": "carlos@example.com"
+  }'
+
+# 2. Listar estudiantes
+curl http://localhost:3000/api/estudiantes
+
+# 3. Obtener estudiante específico
+curl http://localhost:3000/api/estudiantes/EST00001
+
+# 4. Registrar asistencia
+curl -X POST http://localhost:3000/api/asistencias \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id_estudiante": "EST00001",
+    "fecha": "2024-04-20",
+    "estado": "presente"
+  }'
+
+# 5. Listar asistencias de un estudiante
+curl http://localhost:3000/api/asistencias/estudiante/EST00001
+
+# 6. Obtener reporte de ausentismo
+curl http://localhost:3000/api/reportes/ausentismo
+
+# 7. Health check
+curl http://localhost:3000/health
+```
+
+### Con Postman
+
+1. Importar colección desde `ejemplos.json` (ajustado a formato de Postman)
+2. O crear peticiones manualmente usando los ejemplos anteriores
+
+### Con código JavaScript/Fetch
+
+```javascript
+// Crear estudiante
+fetch('http://localhost:3000/api/estudiantes', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    id: 'EST00004',
+    nombre: 'Ana García',
+    email: 'ana@example.com'
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data));
+
+// Registrar asistencia
+fetch('http://localhost:3000/api/asistencias', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    id_estudiante: 'EST00001',
+    fecha: '2024-04-20',
+    estado: 'presente'
+  })
+})
+.then(response => response.json())
+.then(data => console.log(data));
+```
+
+---
+
+## 📁 Estructura del Proyecto
+
+```
+asistencia-api-vibe/
+├── src/
+│   ├── server.js                    # Punto de entrada principal
+│   ├── routes/
+│   │   ├── estudiantesRoutes.js     # Rutas de estudiantes
+│   │   ├── asistenciasRoutes.js     # Rutas de asistencias
+│   │   └── reportesRoutes.js        # Rutas de reportes
+│   ├── controllers/
+│   │   ├── estudiantesController.js # Lógica de estudiantes
+│   │   ├── asistenciasController.js # Lógica de asistencias
+│   │   └── reportesController.js    # Lógica de reportes
+│   ├── models/
+│   │   └── data.js                  # Almacenamiento en memoria
+│   ├── middleware/
+│   │   ├── validators.js            # Validaciones con Joi
+│   │   └── errorHandler.js          # Manejo de errores
+│   └── utils/
+│       └── constants.js             # Constantes y patrones
+├── ejemplos.json                    # Ejemplos de peticiones
+├── package.json                     # Dependencias del proyecto
+├── package-lock.json                # Versiones exactas de dependencias
+└── README.md                        # Este archivo
+```
+
+---
+
+## 🏗️ Arquitectura y Patrones
+
+### Patrón MVC (Modificado)
+
+- **Models** (`src/models/`): Manejo de datos en memoria
+- **Controllers** (`src/controllers/`): Lógica de negocio
+- **Routes** (`src/routes/`): Definición de endpoints
+- **Middleware**: Validación y manejo de errores
+
+### Separación de Responsabilidades
+
+```
+Request
+   ↓
+Router (src/routes/*.js)
+   ↓
+Controller (src/controllers/*.js)
+   ↓
+Validators (src/middleware/validators.js)
+   ↓
+Data Layer (src/models/data.js)
+   ↓
+Response
+```
+
+---
+
+## 📦 Dependencias
+
+### Producción
+
+- **express** (^4.18.2): Framework web
+- **joi** (^17.11.0): Validación de datos
+- **cors** (^2.8.5): Control de CORS
+
+### Desarrollo
+
+- **nodemon** (^3.0.2): Recarga automática en desarrollo
+
+---
+
+## 🎯 Ejemplos de Validaciones
+
+### ❌ Validación Fallida - Código de Estudiante Inválido
+
+```bash
+POST /api/estudiantes
+{
+  "id": "EST123",           # ❌ Solo 3 dígitos, necesita 5
+  "nombre": "Juan",
+  "email": "juan@example.com"
+}
+
+Respuesta (400):
+{
+  "success": false,
+  "message": "Error de validación",
+  "errors": [
+    {
+      "field": "id",
+      "message": "El código del estudiante debe seguir el patrón EST + 5 dígitos (Ej: EST00123)"
+    }
+  ]
+}
+```
+
+### ❌ Validación Fallida - Fecha Futura
+
+```bash
+POST /api/asistencias
+{
+  "id_estudiante": "EST00001",
+  "fecha": "2025-12-31",    # ❌ Fecha futura no permitida
+  "estado": "presente"
+}
+
+Respuesta (400):
+{
+  "success": false,
+  "message": "Error de validación",
+  "errors": [
+    {
+      "field": "fecha",
+      "message": "La fecha no puede ser futura"
+    }
+  ]
+}
+```
+
+### ❌ Conflicto - Registro Duplicado
+
+```bash
+POST /api/asistencias
+{
+  "id_estudiante": "EST00001",
+  "fecha": "2024-04-20",    # ❌ Ya existe registro para este día
+  "estado": "presente"
+}
+
+Respuesta (409):
+{
+  "success": false,
+  "code": "DUPLICATE_ATTENDANCE",
+  "message": "Ya existe un registro de asistencia para este estudiante en esta fecha"
+}
+```
+
+---
+
+## 📈 Algoritmo del Reporte de Ausentismo
+
+```
+1. Obtener todos los estudiantes y asistencias
+2. Para cada estudiante:
+   a. Contar total de registros de asistencia
+   b. Contar ausencias (estado = 'ausente')
+   c. Contar justificadas (estado = 'justificada')
+   d. Contar presentes (estado = 'presente')
+   e. Calcular totalFaltas = ausencias + justificadas
+   f. Calcular porcentaje = (totalFaltas / totalAsistencias) * 100
+3. Ordenar descendente por totalFaltas
+4. Ordenar descendente por porcentaje (si hay empates)
+5. Retornar los 5 primeros con ranking
+```
+
+**Ejemplo de Cálculo**:
+
+| Estudiante | Total | Presente | Ausente | Justificada | Faltas | % |
+|-----------|-------|----------|---------|-------------|--------|---|
+| EST00002  | 10    | 6        | 3       | 1           | 4      | 40% |
+| EST00001  | 12    | 10       | 1       | 1           | 2      | 17% |
+
+Result: **EST00002** ocupa el **Ranking 1** (40% > 17%)
+
+---
+
+## 🔐 Consideraciones de Seguridad
+
+**Nota**: Este es un proyecto educativo. Para producción, implementar:
+
+- ✅ Autenticación y autorización (JWT)
+- ✅ Base de datos persistente (MongoDB, PostgreSQL)
+- ✅ Validación y sanitización más robusta
+- ✅ Rate limiting
+- ✅ HTTPS
+- ✅ Logging y monitoreo
+- ✅ Variables de entorno para configuración
+- ✅ Pruebas unitarias e integración
+
+---
+
+## 📝 Datos Iniciales (Mock Data)
+
+La API viene preconfigurada con 2 estudiantes y 3 registros de asistencia:
+
+**Estudiantes**:
+- EST00001 - Juan García (juan.garcia@example.com)
+- EST00002 - María López (maria.lopez@example.com)
+
+**Asistencias**:
+- EST00001 - 2024-04-10 - Presente
+- EST00001 - 2024-04-11 - Ausente
+- EST00002 - 2024-04-10 - Presente
+
+---
+
+## 🤝 Contribuciones
+
+Este proyecto es educativo. Sugerencias para mejora:
+
+1. Agregar persistencia con base de datos
+2. Implementar autenticación
+3. Agregar más validaciones
+4. Mejorar documentación API
+5. Agregar pruebas automáticas
+
+---
+
+## 📄 Licencia
+
+MIT - Libre para uso académico y comercial
+
+---
+
+## 👨‍💻 Autor
+
+Desarrollado como proyecto educativo de Software III
+
+**Contacto**: Para preguntas o sugerencias, no dude en contactar al desarrollador.
+
+---
+
+## 📚 Documentación Adicional
+
+- **Ejemplos JSON**: Ver archivo `ejemplos.json`
+- **Validaciones**: Ver `src/middleware/validators.js`
+- **Constantes**: Ver `src/utils/constants.js`
+
+---
+
+## ✅ Checklist de Funcionalidades
+
+- ✅ Crear estudiante (POST)
+- ✅ Listar estudiantes (GET)
+- ✅ Obtener estudiante por ID (GET)
+- ✅ Registrar asistencia (POST)
+- ✅ Listar asistencias por estudiante (GET)
+- ✅ Top 5 ausentismo (GET)
+- ✅ Validaciones con Regex para código de estudiante
+- ✅ Validaciones de estados (presente, ausente, justificada)
+- ✅ Validaciones de fechas (no futuras)
+- ✅ Prevención de registros duplicados
+- ✅ Códigos HTTP correctos
+- ✅ Estructura modular
+- ✅ Manejo de errores robusto
+- ✅ Ejemplos JSON completos
+- ✅ README documentado
+
+---
+
+¡Disfruta desarrollando con esta API! 🚀
