@@ -6,12 +6,12 @@
 const express = require('express');
 const serverless = require('serverless-http'); // 1. Importamos la librería serverless
 const cors = require('cors');
-const { errorHandler } = require('../../middleware/errorHandler');
+const { errorHandler } = require('../../src/middleware/errorHandler');
 
 // Importar rutas
-const estudiantesRoutes = require('../../routes/estudiantesRoutes');
-const asistenciasRoutes = require('../../routes/asistenciasRoutes');
-const reportesRoutes = require('../../routes/reportesRoutes');
+const estudiantesRoutes = require('../../src/routes/estudiantesRoutes');
+const asistenciasRoutes = require('../../src/routes/asistenciasRoutes');
+const reportesRoutes = require('../../src/routes/reportesRoutes');
 
 // Crear la aplicación Express
 const app = express();
